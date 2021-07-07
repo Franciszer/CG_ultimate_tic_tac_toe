@@ -55,13 +55,14 @@ struct State
 
 	bool	sq_is_win(int x, int y) { // returns true if _player wins square
 		// set the position at the top right hand corner of the square
-		x /= SQ_SZ;
-		y /= SQ_SZ;
+		cout << "x " << x << " y " << y << endl;
+		x = x / SQ_SZ * SQ_SZ;
+		y = y / SQ_SZ * SQ_SZ;
 
+		cout << "x " << x << " y " << y << endl;
 		// horizontal check
 		for (int i = 0 ; i < SQ_SZ ; i++) {
 			for (int j = 0 ; j < SQ_SZ ; j++) {
-				cout << "pos " << x + i << ' ' << y + j << endl;
 				if (!is_marking(_player, x + i, y + j))
 					break;
 				else if (j == 2)
@@ -78,6 +79,11 @@ struct State
 					return true;
 			}
 		}
+
+		// diagonal check
+		if ((is_marking(_player, x, y) && is_marking(_player, x + 1, y + 1) && is_marking(_player, x + 2, y + 2)) ||\
+			(is_marking(_player, x + 2, y) && is_marking(_player, x + 1, y + 1) && is_marking(_player, x, y + 2)))
+				return true;
 		return false;
 	}
 
@@ -86,25 +92,48 @@ struct State
 	// does not work if the opponent hasn't played before
 	// each set bit corresponds to a possible position
 	__uint128_t			get_possible_moves(int x, int y) {
+		// every set bit in possible_moves is an authorized mode for this situation
 		__uint128_t	possible_moves = 0;
 		
 		// get the current square
-		x /= SQ_SZ;
-		y /= SQ_SZ;
+		__uint128_t	current_square = (x / SQ_SZ * SQ_SZ + y / SQ_SZ);
 
-		// if the square is already won by either player, return all empty cells on unfinished squares
-		if (_wins[CR] & ((__uint128_t)1 << (x * SQ_SZ + y)) ||\
-			_wins[CL] & ((__uint128_t)1 << (x * SQ_SZ + y))) {
+		// if the square is already finished, return all empty cells on unfinished squares
+		if (_wins[CR] & ((__uint128_t)1 << current_square) ||\
+			_wins[CL] & ((__uint128_t)1 << current_square)) {
 				for (__uint16_t i = 0 ; i < 9 ; i++) {
 					// if current square is not finished
 					if (!(_wins[CR] & ((__uint16_t)1 << i)) &&\
 						!(_wins[CL] & ((__uint16_t)1 << i))) {
-							// set x and y to the beginning of the square
-							x = i / SQ_SZ * BOARD_SZ;
-							y = i % SQ_SZ * BOARD_SZ;
+							// set x1 and y1 to the beginning of the square
+							__uint128_t x1 = i / SQ_SZ * SQ_SZ;
+							__uint128_t y1 = i % SQ_SZ * SQ_SZ;
+
+							// iterate through every cell in the square
+							for (__uint128_t j = 0 ; j < SQ_SZ ; j++) {
+								for (__uint128_t k = 0 ; k < SQ_SZ ; k++) {
+									// if cell is empty, set it as a possible move
+									if (!is_marking(CR, x1 + j, y1 + k) && !is_marking(CL, x1 + k, y1 + j))
+										possible_moves = (possible_moves | ((__uint128_t)1 << (x1 * BOARD_SZ + y1)));
+								}
+							}
 					}
 				}
-			return possible_moves;
+		}
+		// if the square is unfinished, return all empty cells of that square
+		else {
+			// get top left hand corner position of current square
+			__uint128_t	x1 = x / SQ_SZ * SQ_SZ;
+			__uint128_t	y1 = y / SQ_SZ * SQ_SZ;
+
+			// iterate through every cell in the square, each empty cell encountered is set as a possible move 
+			for (__uint128_t j = 0 ; j < SQ_SZ ; j++) {
+				for (__uint128_t k = 0 ; k < SQ_SZ ; k++) {
+					// if cell is empty, set it as a possible move
+					if (!is_marking(CR, x1 + j, y1 + k) && !is_marking(CL, x1 + k, y1 + j))
+						possible_moves = (possible_moves | ((__uint128_t)1 << (x1 * BOARD_SZ + y1)));
+				}
+			}
 		}
 		return possible_moves;
 	}
@@ -136,11 +165,11 @@ int main()
 {
 	State	state;
 	state._player = !state._player;
-	state.set_marking(0, 1);
-	state.set_marking(1, 1);
-	state.set_marking(2, 1);
+	state.set_marking(3, 2);
+	state.set_marking(4, 1);
+	state.set_marking(5, 0);
 	cout << state << endl;
-	cout << (state.sq_is_win(0, 2) ? "W " : "N ");
+	cout << (state.sq_is_win(3, 2) ? "W " : "N ");
 	cout << endl;
     // game loop
     // while (1) {
