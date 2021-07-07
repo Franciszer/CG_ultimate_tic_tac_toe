@@ -130,8 +130,8 @@ struct State
 			for (__uint128_t j = 0 ; j < SQ_SZ ; j++) {
 				for (__uint128_t k = 0 ; k < SQ_SZ ; k++) {
 					// if cell is empty, set it as a possible move
-					if (!is_marking(CR, x1 + j, y1 + k) && !is_marking(CL, x1 + k, y1 + j))
-						possible_moves = (possible_moves | ((__uint128_t)1 << (x1 * BOARD_SZ + y1)));
+					if (!is_marking(CR, x1 + j, y1 + k))
+						possible_moves = (possible_moves | ((__uint128_t)1 << ((x1 + j) * BOARD_SZ + (y1 + k))));
 				}
 			}
 		}
@@ -161,32 +161,32 @@ struct State
 };
 
 
-int main()
-{
-	State	state;
-	state._player = !state._player;
-	state.set_marking(3, 2);
-	state.set_marking(4, 1);
-	state.set_marking(5, 0);
-	cout << state << endl;
-	cout << (state.sq_is_win(3, 2) ? "W " : "N ");
-	cout << endl;
-    // game loop
-    // while (1) {
-    //     int opponentRow;
-    //     int opponentCol;
-    //     cin >> opponentRow >> opponentCol; cin.ignore();
-    //     int validActionCount;
-    //     cin >> validActionCount; cin.ignore();
-    //     for (int i = 0; i < validActionCount; i++) {
-    //         int row;
-    //         int col;
-    //         cin >> row >> col; cin.ignore();
-    //     }
+// int main()
+// {
+// 	State	state;
+// 	state._player = !state._player;
+// 	state.set_marking(3, 2);
+// 	state.set_marking(4, 1);
+// 	state.set_marking(5, 0);
+// 	cout << state << endl;
+// 	cout << (state.sq_is_win(3, 2) ? "W " : "N ");
+// 	cout << endl;
+//     // game loop
+//     // while (1) {
+//     //     int opponentRow;
+//     //     int opponentCol;
+//     //     cin >> opponentRow >> opponentCol; cin.ignore();
+//     //     int validActionCount;
+//     //     cin >> validActionCount; cin.ignore();
+//     //     for (int i = 0; i < validActionCount; i++) {
+//     //         int row;
+//     //         int col;
+//     //         cin >> row >> col; cin.ignore();
+//     //     }
 
-    //     // Write an action using cout. DON'T FORGET THE "<< endl"
-    //     // To debug: cerr << "Debug messages..." << endl;
+//     //     // Write an action using cout. DON'T FORGET THE "<< endl"
+//     //     // To debug: cerr << "Debug messages..." << endl;
 
-    //     cout << "0 0" << endl;
-    // }
-}
+//     //     cout << "0 0" << endl;
+//     // }
+// }
