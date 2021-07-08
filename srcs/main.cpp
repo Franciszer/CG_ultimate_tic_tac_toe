@@ -17,18 +17,38 @@ using std::ostream;
  * the standard input according to the problem statement.
  **/
 
+std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src)
+{
+    constexpr const __uint128_t bottom_mask = (__uint128_t{1} << 64) - 1;
+    constexpr const __uint128_t top_mask = ~bottom_mask;
+    return { src & bottom_mask, (src & top_mask) >> 64 };
+}
+
+__uint128_t uint128_decode(__uint64_t src1, __uint64_t src2)
+{
+    return (__uint128_t{src2} << 64) | src1;
+}
+
+__uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
+								uint128_decode(0xe07038, 0x0),
+								uint128_decode(0x70381c0, 0x0),
+								uint128_decode(0xe07038000000, 0x0),
+								uint128_decode(0x70381c0000000, 0x0),
+								uint128_decode(0x381c0e00000000, 0x0),
+								uint128_decode(0x81c0000000000000, 0x703),
+								uint128_decode(0xe00000000000000, 0x381c),
+								uint128_decode(0x7000000000000000, 0x1c0e0)
+							};
 
 struct State
 {
-	State(bool player = CR):
-	_boards{0, 0}, _wins{0, 0},
-	_player(player)
+	State():
+	_boards{0, 0}, _wins{0, 0}
 	{};
 
 	State(const State& src):
 	_boards{src._boards[CR], src._boards[CL]},
-	_wins{src._wins[CR], src._wins[CL]},	
-	_player(src._player)
+	_wins{src._wins[CR], src._wins[CL]}
 	{}; 
 
 	~State() {}
@@ -39,21 +59,24 @@ struct State
 			_boards[0] = src._boards[1];
 			_wins[0] = src._wins[1];
 			_wins[0] = src._wins[1];
-			_player = src._player;
 		}
 		return *this;
 	}
 
 
-	void	set_marking(int x, int y) { // sets current player's marking on (x, y) position
-		_boards[_player] = (_boards[_player] | ((__uint128_t)1 << (x * BOARD_SZ + y)));
+	void	set_marking(bool player, int x, int y) { // sets current player's marking on (x, y) position
+		_boards[player] = (_boards[player] | ((__uint128_t)1 << (x * BOARD_SZ + y)));
 	}
 
 	bool	is_marking(bool player, int x, int y) { // return true if player's (x, y) position is marked and false otherwise
 		return (_boards[player] & ((__uint128_t)1 << (x * BOARD_SZ + y)));
 	}
 
-	bool	sq_is_win(int x, int y) { // returns true if _player wins square
+	// get square for x, y coordinates
+	static __uint16_t	which_square(__uint16_t x, __uint16_t y) {
+		return x / SQ_SZ * SQ_SZ + y / SQ_SZ;
+	}
+	bool	sq_is_win(bool player, int x, int y) { // returns true if player wins square
 		// set the position at the top right hand corner of the square
 		cout << "x " << x << " y " << y << endl;
 		x = x / SQ_SZ * SQ_SZ;
@@ -63,7 +86,7 @@ struct State
 		// horizontal check
 		for (int i = 0 ; i < SQ_SZ ; i++) {
 			for (int j = 0 ; j < SQ_SZ ; j++) {
-				if (!is_marking(_player, x + i, y + j))
+				if (!is_marking(player, x + i, y + j))
 					break;
 				else if (j == 2)
 					return true;
@@ -73,7 +96,7 @@ struct State
 		// vertical check
 		for (int i = 0 ; i < SQ_SZ ; i++) {
 			for (int j = 0 ; j < SQ_SZ ; j++) {
-				if (!is_marking(_player, x + j, y + i))
+				if (!is_marking(player, x + j, y + i))
 					break;
 				else if (j == 2)
 					return true;
@@ -81,11 +104,12 @@ struct State
 		}
 
 		// diagonal check
-		if ((is_marking(_player, x, y) && is_marking(_player, x + 1, y + 1) && is_marking(_player, x + 2, y + 2)) ||\
-			(is_marking(_player, x + 2, y) && is_marking(_player, x + 1, y + 1) && is_marking(_player, x, y + 2)))
+		if ((is_marking(player, x, y) && is_marking(player, x + 1, y + 1) && is_marking(player, x + 2, y + 2)) ||\
+			(is_marking(player, x + 2, y) && is_marking(player, x + 1, y + 1) && is_marking(player, x, y + 2)))
 				return true;
 		return false;
 	}
+
 
 	// get the possible moves following current state
 	// x and y are the coordiates of the last move of the opposing player
@@ -157,14 +181,13 @@ struct State
 
     __uint128_t		_boards[2];	// 1 map for player's and opponent's markings
     __uint16_t		_wins[2];		// map of player's winning maps
-	bool			_player;			// current player
 };
 
 
 // int main()
 // {
 // 	State	state;
-// 	state._player = !state._player;
+// 	state.player = !state.player;
 // 	state.set_marking(3, 2);
 // 	state.set_marking(4, 1);
 // 	state.set_marking(5, 0);
