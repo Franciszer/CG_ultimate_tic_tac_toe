@@ -27,29 +27,43 @@ std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src)
 
 __uint128_t uint128_decode(__uint64_t src1, __uint64_t src2)
 {
-    return (__uint128_t{src2} << 64) | src1;
+    return ((__uint128_t)src2 << 64) | src1;
 }
 
-__uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
-								uint128_decode(0xe07038, 0x0),
-								uint128_decode(0x70381c0, 0x0),
-								uint128_decode(0xe07038000000, 0x0),
-								uint128_decode(0x70381c0000000, 0x0),
-								uint128_decode(0x381c0e00000000, 0x0),
-								uint128_decode(0x81c0000000000000, 0x703),
-								uint128_decode(0xe00000000000000, 0x381c),
-								uint128_decode(0x7000000000000000, 0x1c0e0)
-							};
+const __uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
+										uint128_decode(0xe07038, 0x0),
+										uint128_decode(0x70381c0, 0x0),
+										uint128_decode(0xe07038000000, 0x0),
+										uint128_decode(0x70381c0000000, 0x0),
+										uint128_decode(0x381c0e00000000, 0x0),
+										uint128_decode(0x81c0000000000000, 0x703),
+										uint128_decode(0xe00000000000000, 0x381c),
+										uint128_decode(0x7000000000000000, 0x1c0e0)
+									};
 
-__uint128_t	square_masks[8] {	uint128_decode(0x7, 0),
-								uint128_decode(0xe00, 0),
-								uint128_decode(0x1c0000, 0),
-								uint128_decode(0x40201, 0),
-								uint128_decode(0x80402, 0),
-								uint128_decode(0x100804, 0),
-								uint128_decode(0x100401, 0),
-								uint128_decode(0x40404, 0)
-							};
+const __uint128_t	board_win_masks[8] = {	board_masks[0] | board_masks[1] | board_masks[2],
+											board_masks[3] | board_masks[4] | board_masks[5],
+											board_masks[6] | board_masks[7] | board_masks[8],
+
+											board_masks[0] | board_masks[3] | board_masks[6],
+											board_masks[1] | board_masks[4] | board_masks[7],
+											board_masks[2] | board_masks[5] | board_masks[8],
+											
+											board_masks[0] | board_masks[4] | board_masks[8],
+											board_masks[2] | board_masks[4] | board_masks[6]
+										};
+
+const __uint128_t	square_masks[8] {	uint128_decode(0x7, 0),
+										uint128_decode(0xe00, 0),
+										uint128_decode(0x1c0000, 0),
+										uint128_decode(0x40201, 0),
+										uint128_decode(0x80402, 0),
+										uint128_decode(0x100804, 0),
+										uint128_decode(0x100401, 0),
+										uint128_decode(0x40404, 0)
+									};
+
+const __uint128_t	fullmap_mask = uint128_decode(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
 
 struct State
 {
@@ -151,7 +165,7 @@ struct State
 		}
 		return os;
 	}
-	void			print_board(__uint128_t b) {
+	static void			print_board(__uint128_t b) {
 		for (int i = 0 ; i < BOARD_SZ ; i++) {
 			for (int j = 0 ; j < BOARD_SZ ; j++) {
 				if ((b & ((__uint128_t)1 << (i * BOARD_SZ + j))))
@@ -164,6 +178,18 @@ struct State
 				cerr << endl;
 		}
 		cerr << endl;
+	}
+
+	// much like sq_is_win, but for the whole board
+	bool	is_win(bool player) {
+		for (auto i = 0 ; i < 8 ; i++)
+			if (__popcount<__uint128_t>(_boards[player]) == 0x1B)
+				return true;
+		return false;
+	}
+	// when all squares have been finished, determins who won, i.e who has won the most squares
+	bool	who_won() {
+		return __popcount<__uint128_t>(_boards[CR]) < __popcount<__uint128_t>(_boards[CL]);
 	}
     __uint128_t		_boards[2];	// 1 map for player's and opponent's markings
     __uint16_t		_wins[2];		// map of player's winning maps

@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/20 20:13:15 by francisco         #+#    #+#             */
-/*   Updated: 2021/07/09 21:40:10 by francisco        ###   ########.fr       */
+/*   Updated: 2021/07/09 22:27:20 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,6 +229,6 @@ TEST_F(TUTT_maps, get_possible_moves) {
 		EXPECT_EQ(state.get_possible_moves(i), ~(board_masks[i]));
 	}
 	state._boards[CR] = board_masks[0] | board_masks[8];
-	EXPECT_EQ(state.get_possible_moves(0), ~(board_masks[0] | board_masks[8])); 
+	EXPECT_EQ(state.get_possible_moves(0), ~(board_masks[0] | board_masks[8]));
 }
 
