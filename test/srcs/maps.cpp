@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/20 20:13:15 by francisco         #+#    #+#             */
-/*   Updated: 2021/07/08 18:33:59 by francisco        ###   ########.fr       */
+/*   Updated: 2021/07/09 11:08:53 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,15 +189,26 @@ TEST_F(TUTT_maps, which_square) {
 	EXPECT_EQ(State::which_square(8, 8), 8);
 }
 
-// __uint128_t	square_masks[11] {
-	
-// }
+TEST_F(TUTT_maps, sq_is_win) {
+	state.set_marking(CL, 2, 0);	
+	state.set_marking(CL, 1, 1);	
+	state.set_marking(CL, 0, 2);
+	EXPECT_TRUE(state.sq_is_win(CL, 0, 0));
+	EXPECT_TRUE(state.sq_is_win(CL, 2,2));
 
-// TEST_F(TUTT_maps, masks) {
-// 	state.set_marking(CL, 0, 0);	
-// 	state.set_marking(CL, 0, 1);	
-// 	state.set_marking(CL, 0, 2);
-// 	auto p = uint128_encode(state._boards[CL]);
-// 	cerr << hex << p.first << '\t' << p.second << endl;
-// 	cerr << state << endl;
-// }
+	state.set_marking(CL, 6, 6);
+	state.set_marking(CL, 6, 7);
+	state.set_marking(CL, 6, 8);
+	EXPECT_TRUE(state.sq_is_win(CL, 6, 6));
+	EXPECT_TRUE(state.sq_is_win(CL, 6, 8));
+	EXPECT_TRUE(state.sq_is_win(CL, 7, 7));
+
+	for (auto i = 0 ; i < BOARD_SZ ; i++)
+		for (auto j = 0 ; j < BOARD_SZ ; j++) {
+			if ((i / SQ_SZ * SQ_SZ == 0 && j / SQ_SZ * SQ_SZ == 0) ||
+				(i / SQ_SZ * SQ_SZ == 6 && j / SQ_SZ * SQ_SZ == 6))
+					EXPECT_TRUE(state.sq_is_win(CL, i, j));
+			else
+				EXPECT_FALSE(state.sq_is_win(CL, i, j));
+		}
+}

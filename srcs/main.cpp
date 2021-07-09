@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <bit>
 
 #define CR 0
 #define CL 1
@@ -40,6 +41,16 @@ __uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
 								uint128_decode(0x7000000000000000, 0x1c0e0)
 							};
 
+__uint128_t	square_masks[8] {	uint128_decode(0x7, 0),
+								uint128_decode(0xe00, 0),
+								uint128_decode(0x1c0000, 0),
+								uint128_decode(0x40201, 0),
+								uint128_decode(0x80402, 0),
+								uint128_decode(0x100804, 0),
+								uint128_decode(0x100401, 0),
+								uint128_decode(0x40404, 0)
+							};
+
 struct State
 {
 	State():
@@ -76,37 +87,23 @@ struct State
 	static __uint16_t	which_square(__uint16_t x, __uint16_t y) {
 		return x / SQ_SZ * SQ_SZ + y / SQ_SZ;
 	}
-	bool	sq_is_win(bool player, int x, int y) { // returns true if player wins square
-		// set the position at the top right hand corner of the square
-		cout << "x " << x << " y " << y << endl;
-		x = x / SQ_SZ * SQ_SZ;
-		y = y / SQ_SZ * SQ_SZ;
+	// returns true if square is won by player
+	bool	sq_is_win(bool player, __uint8_t x, __uint8_t y) {
+		// set coordinates to the top left hand corner of the square
+		x -= x % SQ_SZ;
+		y -= y % SQ_SZ;
 
-		cout << "x " << x << " y " << y << endl;
-		// horizontal check
-		for (int i = 0 ; i < SQ_SZ ; i++) {
-			for (int j = 0 ; j < SQ_SZ ; j++) {
-				if (!is_marking(player, x + i, y + j))
-					break;
-				else if (j == 2)
-					return true;
-			}
-		}
+		// move the square to the beginning of board and remove all of the other set bits
+		__uint128_t	curr_sq = (_boards[player] >> (x * BOARD_SZ + y)) & board_masks[0];
 
-		// vertical check
-		for (int i = 0 ; i < SQ_SZ ; i++) {
-			for (int j = 0 ; j < SQ_SZ ; j++) {
-				if (!is_marking(player, x + j, y + i))
-					break;
-				else if (j == 2)
-					return true;
-			}
-		}
-
-		// diagonal check
-		if ((is_marking(player, x, y) && is_marking(player, x + 1, y + 1) && is_marking(player, x + 2, y + 2)) ||\
-			(is_marking(player, x + 2, y) && is_marking(player, x + 1, y + 1) && is_marking(player, x, y + 2)))
+		// check if sq is in a finished configuration	
+		for (auto i = 0 ; i < 8 ; i++) {
+			// cerr << "popcnt: " << __popcount<__uint128_t>(curr_sq & square_masks[i]) << endl;
+			if (__popcount<__uint128_t>((curr_sq & square_masks[i])) == 3)
 				return true;
+		}
+
+		// if that is not the case, the square is not finished
 		return false;
 	}
 
@@ -178,7 +175,20 @@ struct State
 		}
 		return os;
 	}
-
+	void			print_board(__uint128_t b) {
+		for (int i = 0 ; i < BOARD_SZ ; i++) {
+			for (int j = 0 ; j < BOARD_SZ ; j++) {
+				if ((b & ((__uint128_t)1 << (i * BOARD_SZ + j))))
+					cerr << '1';
+				else
+					cerr << '0';
+				cerr << ' ';
+			}
+			if (i != BOARD_SZ - 1)
+				cerr << endl;
+		}
+		cerr << endl;
+	}
     __uint128_t		_boards[2];	// 1 map for player's and opponent's markings
     __uint16_t		_wins[2];		// map of player's winning maps
 };

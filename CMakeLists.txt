@@ -22,6 +22,6 @@ add_library(${This} STATIC ${Sources})
 
 # target_sources(${This} PUBLIC ${Sources})
 target_include_directories(${This} PUBLIC srcs)
-target_compile_options(${This} PUBLIC -Wall -Wextra -Werror)
+target_compile_options(${This} PUBLIC -Wall -Wextra)
 
 add_subdirectory(test)
