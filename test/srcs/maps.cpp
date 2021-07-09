@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/20 20:13:15 by francisco         #+#    #+#             */
-/*   Updated: 2021/07/09 11:08:53 by francisco        ###   ########.fr       */
+/*   Updated: 2021/07/09 15:58:28 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,4 +211,13 @@ TEST_F(TUTT_maps, sq_is_win) {
 			else
 				EXPECT_FALSE(state.sq_is_win(CL, i, j));
 		}
+}
+
+TEST_F(TUTT_maps, sq_is_finished) {
+	for (auto i = 0 ; i < 8 ; i++) {
+		state._boards[CR] = board_masks[i];
+		EXPECT_TRUE(state.sq_is_finished(i));
+		state._boards[CR] = 0;
+		EXPECT_FALSE(state.sq_is_finished(i));
+	}
 }

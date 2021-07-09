@@ -84,10 +84,17 @@ struct State
 	}
 
 	// get square for x, y coordinates
-	static __uint16_t	which_square(__uint16_t x, __uint16_t y) {
+	static __uint8_t	which_square(__uint16_t x, __uint16_t y) {
 		return x / SQ_SZ * SQ_SZ + y / SQ_SZ;
 	}
+
+	void	set_sq_as_won(bool player, __uint8_t diag) {
+		_boards[player] = _boards[player] & board_masks[diag];
+	}
+
 	// returns true if square is won by player
+	// call this function when you just inserted an element, to check if that move won the square
+	// otherwise, call sq_is_finished
 	bool	sq_is_win(bool player, __uint8_t x, __uint8_t y) {
 		// set coordinates to the top left hand corner of the square
 		x -= x % SQ_SZ;
@@ -107,55 +114,24 @@ struct State
 		return false;
 	}
 
+	bool	sq_is_finished(__uint8_t sq) {
+		// cerr << __popcount<__uint8_t>(board_masks[sq] & _boards[CR]) << endl;
+		return (__popcount<__uint128_t>(board_masks[sq] & _boards[CR]) == 9 ||\
+				__popcount<__uint128_t>(board_masks[sq] & _boards[CL]) == 9);
+	}
 
 	// get the possible moves following current state
-	// x and y are the coordiates of the last move of the opposing player
+	// sq is the number of the square to check
 	// does not work if the opponent hasn't played before
 	// each set bit corresponds to a possible position
-	__uint128_t			get_possible_moves(int x, int y) {
-		// every set bit in possible_moves is an authorized mode for this situation
+	__uint128_t			get_possible_moves(__uint8_t sq) {
 		__uint128_t	possible_moves = 0;
-		
-		// get the current square
-		__uint128_t	current_square = (x / SQ_SZ * SQ_SZ + y / SQ_SZ);
 
-		// if the square is already finished, return all empty cells on unfinished squares
-		if (_wins[CR] & ((__uint128_t)1 << current_square) ||\
-			_wins[CL] & ((__uint128_t)1 << current_square)) {
-				for (__uint16_t i = 0 ; i < 9 ; i++) {
-					// if current square is not finished
-					if (!(_wins[CR] & ((__uint16_t)1 << i)) &&\
-						!(_wins[CL] & ((__uint16_t)1 << i))) {
-							// set x1 and y1 to the beginning of the square
-							__uint128_t x1 = i / SQ_SZ * SQ_SZ;
-							__uint128_t y1 = i % SQ_SZ * SQ_SZ;
+		if (sq_is_finished(sq))
+			possible_moves = ~(_boards[CR] | _boards[CL]);
+		else 
+			possible_moves = ((~(_boards[CR] | _boards[CL])) & board_masks[sq]);
 
-							// iterate through every cell in the square
-							for (__uint128_t j = 0 ; j < SQ_SZ ; j++) {
-								for (__uint128_t k = 0 ; k < SQ_SZ ; k++) {
-									// if cell is empty, set it as a possible move
-									if (!is_marking(CR, x1 + j, y1 + k) && !is_marking(CL, x1 + k, y1 + j))
-										possible_moves = (possible_moves | ((__uint128_t)1 << (x1 * BOARD_SZ + y1)));
-								}
-							}
-					}
-				}
-		}
-		// if the square is unfinished, return all empty cells of that square
-		else {
-			// get top left hand corner position of current square
-			__uint128_t	x1 = x / SQ_SZ * SQ_SZ;
-			__uint128_t	y1 = y / SQ_SZ * SQ_SZ;
-
-			// iterate through every cell in the square, each empty cell encountered is set as a possible move 
-			for (__uint128_t j = 0 ; j < SQ_SZ ; j++) {
-				for (__uint128_t k = 0 ; k < SQ_SZ ; k++) {
-					// if cell is empty, set it as a possible move
-					if (!is_marking(CR, x1 + j, y1 + k))
-						possible_moves = (possible_moves | ((__uint128_t)1 << ((x1 + j) * BOARD_SZ + (y1 + k))));
-				}
-			}
-		}
 		return possible_moves;
 	}
 
