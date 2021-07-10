@@ -7,7 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 # SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -fsanitize=address")
 
 set(Sources
-	srcs/maps.cpp
+	# srcs/maps.cpp
+	srcs/mcts.cpp
 )
 
 add_executable(${This} ${Sources})

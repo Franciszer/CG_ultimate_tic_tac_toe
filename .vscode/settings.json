@@ -3,6 +3,7 @@
         "ostream": "cpp",
         "iostream": "cpp",
         "utility": "cpp",
-        "bit": "cpp"
+        "bit": "cpp",
+        "chrono": "cpp"
     }
 }

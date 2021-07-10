@@ -3,6 +3,20 @@
 #include <vector>
 #include <algorithm>
 #include <bit>
+#include <cmath>
+#include <unordered_map>
+#include <random>
+#include <chrono>
+#include <sys/time.h>
+#include <ctime>
+
+using std::cout; using std::endl;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::seconds;
+using std::chrono::system_clock;
+
+#define FLT_MIN 1.17549435E-38F
 
 #define CR 0
 #define CL 1
@@ -17,6 +31,20 @@ using std::ostream;
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
  **/
+
+struct Node;
+struct State;
+
+Node*		mcts(Node *root);
+Node*		traverse(Node* node, State& state, bool &player);
+Node*		rollout_policy(Node* node);
+void		expand_node(Node* leaf, State& state);
+Node*		result(Node* node);
+float		rollout(State state, bool player, const __uint128_t& last_move);
+void		backpropagate(Node* root, Node* node, float simulation_result);
+Node*		get_best_move(Node* root);
+
+// unordered_map<State, Node*>		lookup_table;
 
 std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src)
 {
@@ -102,8 +130,15 @@ struct State
 		return x / SQ_SZ * SQ_SZ + y / SQ_SZ;
 	}
 
-	void	set_sq_as_won(bool player, __uint8_t diag) {
-		_boards[player] = _boards[player] & board_masks[diag];
+	static __uint8_t	which_square(__uint128_t move) {
+		for (auto i = 0 ; i < 9 ; i++)
+			if (move & board_masks[i])
+				return i;
+		return 10; // error value
+	}
+
+	void	set_sq_as_won(bool player, __uint8_t sq) {
+		_boards[player] = _boards[player] & board_masks[sq];
 	}
 
 	// returns true if square is won by player
@@ -183,7 +218,7 @@ struct State
 	// much like sq_is_win, but for the whole board
 	bool	is_win(bool player) {
 		for (auto i = 0 ; i < 8 ; i++)
-			if (__popcount<__uint128_t>(_boards[player]) == 0x1B)
+			if (__popcount<__uint128_t>(_boards[player] & board_win_masks[i]) == 0x1B)
 				return true;
 		return false;
 	}
@@ -195,6 +230,139 @@ struct State
     __uint16_t		_wins[2];		// map of player's winning maps
 };
 
+__uint8_t	which_bit(__uint128_t n) {
+	for (__uint8_t i = 0 ; i < 81 ; i++)
+		if (n & ((__uint128_t)1 << i))
+			return i;
+	return 82;
+}
+
+
+struct Node {
+	Node*		parent; 	// parent node
+	__uint128_t	move;		// move that has to be applied to the parent node to get this child
+	Node*		children; 	// first child address in memory
+	__uint8_t	nb;			// number of children
+	float		visits;		// number of times the node was visited
+	float		wins;		// number of times this node or its descendants won a game
+};
+
+Node	*memory = new Node[5000000];
+
+Node*	current_address = memory;
+bool	pl_mark;
+
+Node*	mcts(Node *root) {
+	auto 		 millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+	auto 		 timer				  = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+	while ((timer = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - millisec_since_epoch) < 90) {
+			State	state;
+			bool	player = pl_mark;
+			Node*	leaf = traverse(root, state, player);
+			expand_node(leaf, state);
+			float	simulation_result = rollout(state, player, leaf->move);
+			backpropagate(root, leaf, simulation_result);
+	}
+
+	return get_best_move(root);
+}
+
+Node*		get_best_move(Node* root) {
+	__uint8_t	most_visits = 0;
+	Node*		best_move;
+	for (auto i = 0 ; i < root->nb ; i++)
+		if (root->children[i].visits > most_visits)
+			best_move = &root->children[i];
+	return best_move;
+}
+
+void	backpropagate(Node* root, Node* node, float simulation_result) {
+	while (node != root) {
+		node->wins += simulation_result;
+		node->visits++;
+		node = node->parent;
+	}
+}
+
+Node*	traverse(Node* node, State& state, bool &player) {
+	while (node->visits) {
+		state._boards[pl_mark] = state._boards[pl_mark] | node->move;
+		player = !player;
+		node = rollout_policy(node);
+	}
+	return result(node);
+}
+
+Node*	rollout_policy(Node* node) {
+	float	best_score = FLT_MIN;
+	Node*	best_child = NULL;
+
+	for (auto i = 0 ; i < node->nb ; i++) {
+		float score = node->children[i].wins / node->children[i].visits + sqrt(2) * sqrt(log(node->visits) / node->children[i].visits);
+		if (best_score < score) {
+			best_score = score;
+			best_child = &node->children[i];
+		}
+	}
+	return best_child;
+}
+
+void	expand_node(Node* leaf, State& state) {
+	__uint128_t	possible_moves =\
+		state.get_possible_moves(State::which_square(leaf->move));
+	leaf->nb = 0;
+	for (__uint128_t i = 0 ; i < 81 ; i++) {
+		__uint128_t	current_move = (__uint128_t)1 << i;
+		if (possible_moves & current_move) {
+			current_address->parent = leaf;
+			current_address->move = current_move;
+			current_address->visits = 0;
+			current_address->wins = 0;
+			leaf->children[leaf->nb] = *current_address;
+			++leaf->nb;
+			++current_address;
+		} 
+	}
+}
+
+// pick child with most visits
+Node*	result(Node* node) {
+	return node;
+}
+
+__uint128_t	pick_random_move(const __uint128_t possible_moves) {
+	default_random_engine 				generator;
+	uniform_int_distribution<__uint8_t>	distribution(0, __popcount<__uint128_t>(possible_moves));
+
+	__uint8_t	move_idx = distribution(generator);
+	__int8_t	curr_move = 0;
+	for (__uint8_t i = 0 ; i < 81 ; i++)
+		if (possible_moves & ((__uint128_t)1 << i))
+			if (curr_move++ == move_idx)
+				return (__uint128_t)1 << i;
+	return 0;
+}
+
+float	rollout(State state, bool player, const __uint128_t& last_move) {
+	__uint8_t	sq = State::which_square(last_move);
+	while (true) {
+		__uint128_t	possible_moves = state.get_possible_moves(sq);
+		__uint128_t	move = pick_random_move(possible_moves);
+		state._boards[pl_mark] = state._boards[pl_mark] | move;
+		sq = State::which_square(move);
+		__uint8_t	set_bit = which_bit(move);
+		__uint8_t	x = set_bit / BOARD_SZ;
+		__uint8_t	y = set_bit % BOARD_SZ;
+		
+		if (state.sq_is_win(player, x, y)) {
+			state.set_sq_as_won(player, sq);
+			if (state.is_win(player))
+				return player == pl_mark ? 1 : 0;
+		}
+	}
+	return 0;
+}
 
 // int main()
 // {
