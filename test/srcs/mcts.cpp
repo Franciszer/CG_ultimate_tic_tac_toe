@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "main.cpp"
-#include <gtest/gtest.h>
+#include "uttt.hpp"
 
 class	TUTT_mcts: public ::testing::Test {
 	public:

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "main.cpp"
+#include "uttt.hpp"
 #include <gtest/gtest.h>
 
 std::ostream&
