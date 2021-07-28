@@ -1,11 +1,15 @@
 #include "uttt.hpp"
 
+#include <stdio.h>
+
 #define FLT_MIN 1.17549435E-38F
+
 
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
  **/
+
 
 Node*	memory  = new Node[5000000];
 
@@ -29,8 +33,13 @@ static inline   uint_fast8_t    popcnt_u128 (__uint128_t n)
 {
     const uint64_t      n_hi    = n >> 64;
     const uint64_t      n_lo    = n;
+	#ifdef __MACH__
+    const uint_fast8_t  cnt_hi  = __popcount<uint64_t>(n_hi);
+    const uint_fast8_t  cnt_lo  = __popcount<uint64_t>(n_lo);
+	#elif __linux__
     const uint_fast8_t  cnt_hi  = __builtin_popcountll(n_hi);
     const uint_fast8_t  cnt_lo  = __builtin_popcountll(n_lo);
+	#endif
     const uint_fast8_t  cnt     = cnt_hi + cnt_lo;
 
     return  cnt;
@@ -103,8 +112,8 @@ bool	State::sq_is_win(bool player, __uint8_t x, __uint8_t y) {
 
 bool	State::sq_is_finished(__uint8_t sq) {
 	// cerr << __popcount<__uint8_t>(board_masks[sq] & _boards[CR]) << endl;
-	return (popcnt_u128(board_masks[sq] & _boards[CR]) == 9 ||\
-			popcnt_u128(board_masks[sq] & _boards[CL]) == 9);
+	return ((board_masks[sq] & _boards[CR]) == board_masks[sq] ||\
+			(board_masks[sq] & _boards[CL]) == board_masks[sq]);
 }
 
 // get the possible moves following current state
@@ -174,28 +183,28 @@ void			print_board(__uint128_t b) {
 	cerr << endl;
 }
 
-Node*	mcts(Node *root) {
-	auto 		 millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-	auto 		 timer				  = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+void	mcts(Node *root, State& state, int timelimit) {
+	struct timeval stop, start;
 
-	while ((timer = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() - millisec_since_epoch) < 90) {
-			State	state;
-			bool	player = pl_mark;
-			Node*	leaf = traverse(root, state, player);
-			expand_node(leaf, state);
-			float	simulation_result = rollout(state, player, leaf->move);
-			backpropagate(root, leaf, simulation_result);
+	gettimeofday(&start, NULL);
+	do {
+		bool	player = pl_mark;
+		Node*	leaf = traverse(root, state, player);
+		expand_node(leaf, state);
+		float	simulation_result = rollout(state, player, leaf->move);
+		backpropagate(root, leaf, simulation_result);
+		gettimeofday(&stop, NULL);
 	}
+	while ((stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec < timelimit);
 
-	return get_best_move(root);
 }
 
-Node*		get_best_move(Node* root) {
+__uint128_t		get_best_move(Node* root) {
 	__uint8_t	most_visits = 0;
-	Node*		best_move;
+	__uint128_t	best_move = 0;
 	for (auto i = 0 ; i < root->nb ; i++)
 		if (root->children[i].visits > most_visits)
-			best_move = &root->children[i];
+			best_move = root->children[i].move;
 	return best_move;
 }
 
@@ -208,11 +217,11 @@ void	backpropagate(Node* root, Node* node, float simulation_result) {
 }
 
 Node*	traverse(Node* node, State& state, bool &player) {
-	while (node->visits) {
-		state._boards[pl_mark] = state._boards[pl_mark] | node->move;
-		player = !player;
+	do {
 		node = rollout_policy(node);
-	}
+		state._boards[player] |= node->move;
+		player = !player;
+	} while (node->visits);
 	return result(node);
 }
 
@@ -271,7 +280,7 @@ float	rollout(State state, bool player, const __uint128_t& last_move) {
 	while (true) {
 		__uint128_t	possible_moves = state.get_possible_moves(sq);
 		__uint128_t	move = pick_random_move(possible_moves);
-		state._boards[pl_mark] = state._boards[pl_mark] | move;
+		state._boards[player] |= move;
 		sq = State::which_square(move);
 		__uint8_t	set_bit = which_bit(move);
 		__uint8_t	x = set_bit / BOARD_SZ;
@@ -285,33 +294,3 @@ float	rollout(State state, bool player, const __uint128_t& last_move) {
 	}
 	return 0;
 }
-
-// int main()
-// {
-// 	State	state;
-// 	state.player = !state.player;
-// 	state.set_marking(3, 2);
-// 	state.set_marking(4, 1);
-// 	state.set_marking(5, 0);
-// 	cout << state << endl;
-// 	cout << (state.sq_is_win(3, 2) ? "W " : "N ");
-// 	cout << endl;
-//     // game loop
-//     // while (1) {
-//     //     int opponentRow;
-//     //     int opponentCol;
-//     //     cin >> opponentRow >> opponentCol; cin.ignore();
-//     //     int validActionCount;
-//     //     cin >> validActionCount; cin.ignore();
-//     //     for (int i = 0; i < validActionCount; i++) {
-//     //         int row;
-//     //         int col;
-//     //         cin >> row >> col; cin.ignore();
-//     //     }
-
-//     //     // Write an action using cout. DON'T FORGET THE "<< endl"
-//     //     // To debug: cerr << "Debug messages..." << endl;
-
-//     //     cout << "0 0" << endl;
-//     // }
-// }

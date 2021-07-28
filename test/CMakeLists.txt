@@ -17,7 +17,7 @@ add_executable(${This} ${Sources})
 
 target_link_libraries(${This} PUBLIC
 	gtest_main
-	uttt)
+	uttt_lib)
 
 add_test(
 	NAME ${This}

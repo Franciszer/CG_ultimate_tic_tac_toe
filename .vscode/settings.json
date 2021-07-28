@@ -56,5 +56,19 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
+    },
+
+    "cmake.debugConfig": {
+        "target": "gtest_uttt",
+        "name": "gtest_uttt",
+        "stopAtEntry": true,
+        "MIMode": "lldb",
+       "miDebuggerPath": "/usr/bin/lldb-mi",
+//        "miDebuggerPath": "/Users/griswold/.vscode/extensions/ms-vscode.cpptools-0.26.2/debugAdapters/lldb/bin/lldb-mi",
+        "logging": {
+                "trace": true,
+                "engineLogging": true,
+                "traceResponse": true
+        }
     }
 }

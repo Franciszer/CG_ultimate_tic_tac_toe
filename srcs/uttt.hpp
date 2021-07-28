@@ -6,8 +6,11 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <immintrin.h>
+#ifdef	__MACH__
+#include <bit>
+#elif __linux__
 #include <nmmintrin.h>
+#endif
 #include <stdint.h>
 #include <cmath>
 #include <unordered_map>
@@ -15,6 +18,7 @@
 #include <chrono>
 #include <sys/time.h>
 #include <ctime>
+#include <sys/time.h>
 
 using std::cout; using std::endl;
 using std::chrono::duration_cast;
@@ -40,19 +44,6 @@ using std::ostream;
 
 struct Node;
 struct State;
-
-// static inline   uint_fast8_t    popcnt_u128 (__uint128_t n);
-
-Node*		mcts(Node *root);
-Node*		traverse(Node* node, State& state, bool &player);
-Node*		rollout_policy(Node* node);
-void		expand_node(Node* leaf, State& state);
-Node*		result(Node* node);
-float		rollout(State state, bool player, const __uint128_t& last_move);
-void		backpropagate(Node* root, Node* node, float simulation_result);
-Node*		get_best_move(Node* root);
-
-// unordered_map<State, Node*>		lookup_table;
 
 std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src);
 
@@ -118,9 +109,7 @@ struct Node {
 	float		wins;		// number of times this node or its descendants won a game
 };
 
-Node*	mcts(Node *root);
-
-Node*	get_best_move(Node* root);
+void	mcts(Node *root, State& state, int timelimit);
 
 void	backpropagate(Node* root, Node* node, float simulation_result);
 
@@ -135,6 +124,8 @@ Node*	result(Node* node);
 __uint128_t	pick_random_move(const __uint128_t possible_moves);
 
 float	rollout(State state, bool player, const __uint128_t& last_move);
+
+__uint128_t		get_best_move(Node* root);
 
 const __uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
 										uint128_decode(0xe07038, 0x0),
