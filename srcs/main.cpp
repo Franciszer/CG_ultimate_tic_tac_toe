@@ -20,11 +20,13 @@ void    print_best_move(__uint128_t move) {
 
 int main()
 {
-    cout << "HERE" << endl;
 	State	state;
     Node*   root;
 
     root = memory;
+    root->parent = NULL;
+    root->visits = 0;
+    root->wins = 0;
     current_address++;
     state._boards[CR] = 0;
     state._boards[CL] = 0;
@@ -41,9 +43,9 @@ int main()
     }
 
     if (opponentRow == -1) {
+        cerr << "HERE IT IS" << endl;
         pl_mark = CR;
         state.set_marking(pl_mark, 4, 4);
-        mcts(root, state, 900);        
     }
     else {
         pl_mark = CL;
@@ -54,8 +56,16 @@ int main()
         else {
             state.set_marking(pl_mark, 4, 4);
         }
-        mcts(root, state, 900);
     }
+    cout << "THERE 1" << endl;
+    root->move = state._boards[pl_mark];
+    expand_node(root, state);
+    // cout << "THERE 2" << endl;
+    // cerr << "ROOT" << endl;
+    // cerr << *root << endl;
+    // cerr << "END OF ROOT" << endl;
+    mcts(root, state, 900);
+    exit(0);
     // rest of the game
     while (1) {
         cin >> opponentRow >> opponentCol; cin.ignore();

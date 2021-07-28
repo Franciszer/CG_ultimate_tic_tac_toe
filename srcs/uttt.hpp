@@ -51,6 +51,8 @@ __uint128_t uint128_decode(__uint64_t src1, __uint64_t src2);
 
 void			print_board(__uint128_t b);
 
+uint_fast8_t    popcnt_u128 (__uint128_t n);
+
 struct State
 {
 	State();
@@ -127,6 +129,10 @@ float	rollout(State state, bool player, const __uint128_t& last_move);
 
 __uint128_t		get_best_move(Node* root);
 
+ostream&    operator<<(ostream& os, Node const &node);
+
+__uint8_t	identify_square(__uint128_t move);
+
 const __uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
 										uint128_decode(0xe07038, 0x0),
 										uint128_decode(0x70381c0, 0x0),
@@ -160,7 +166,20 @@ const __uint128_t	square_masks[8] {	uint128_decode(0x7, 0),
 										uint128_decode(0x40404, 0)
 									};
 
-const __uint128_t	fullmap_mask = uint128_decode(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
+const __uint128_t	fullmap_mask = uint128_decode(0xFFFFFFFFFFFFFFFF, 0x1FFFF);
+
+// directions from top left to bottom right
+const __uint128_t	direction_masks[9] = {
+	uint128_decode(0x1240000248000049, 0x0),
+	uint128_decode(0x2480000490000092, 0x0),
+	uint128_decode(0x4900000920000124, 0x0),
+	uint128_decode(0x8000049000009200, 0x24),
+	uint128_decode(0x92000012400, 0x49),
+	uint128_decode(0x124000024800, 0x92),
+	uint128_decode(0x9200001240000, 0x4900),
+	uint128_decode(0x12400002480000, 0x9200),
+	uint128_decode(0x24800004900000, 0x12400)
+};
 
 extern Node*	memory;
 

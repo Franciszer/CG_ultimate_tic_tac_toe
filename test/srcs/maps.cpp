@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/20 20:13:15 by francisco         #+#    #+#             */
-/*   Updated: 2021/07/09 23:59:33 by francisco        ###   ########.fr       */
+/*   Updated: 2021/07/28 17:50:43 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,13 @@ class	TUTT_maps: public ::testing::Test {
 
 		virtual void	TearDown() {}
 };
+
+TEST_F(TUTT_maps, popcnt_u128) {
+	for (auto i = 0 ; i < 128 ; i++) {
+		__uint128_t val = (__uint128_t)1 << i;
+		EXPECT_EQ(popcnt_u128(val), 1);
+	}
+}
 
 TEST_F(TUTT_maps, insert_and_access) {
 	// testing for whole map
@@ -226,8 +233,31 @@ TEST_F(TUTT_maps, get_possible_moves) {
 	for (auto i = 0 ; i < 8 ; i++) {
 		EXPECT_EQ(state.get_possible_moves(i), board_masks[i]);
 		state._boards[CR] = board_masks[i];
-		EXPECT_EQ(state.get_possible_moves(i), ~(board_masks[i]));
+		EXPECT_EQ(state.get_possible_moves(i), ~(board_masks[i]) & fullmap_mask);
 	}
 	state._boards[CR] = board_masks[0] | board_masks[8];
-	EXPECT_EQ(state.get_possible_moves(0), ~(board_masks[0] | board_masks[8]));
+	EXPECT_EQ(state.get_possible_moves(0), ~(board_masks[0] | board_masks[8]) & fullmap_mask);
+}
+
+// __uint128_t	identify_square(__uint128_t move) {
+	
+// }
+
+
+TEST_F(TUTT_maps, identify_square) {
+	__uint128_t	move;
+	for (int i = 0 ; i < 9 ; i++) {
+		for (int j = 0 ; j < 9 ; j++) {
+			move = (__uint128_t)1 << (i * BOARD_SZ + j);
+			EXPECT_TRUE(identify_square(move) < 10);
+		}
+	}
+}
+
+TEST_F(TUTT_maps, which_bit) {
+	__uint128_t move;
+	for (auto i = 0; i < 81; i++) {
+		move = (__uint128_t) 1 << i;
+		EXPECT_EQ(which_bit(move), i);
+	}
 }
