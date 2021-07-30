@@ -25,7 +25,7 @@ int main()
 
     root = memory;
     root->parent = NULL;
-    root->visits = 0;
+    root->visits = 1;
     root->wins = 0;
     current_address++;
     state._boards[CR] = 0;
@@ -43,7 +43,6 @@ int main()
     }
 
     if (opponentRow == -1) {
-        cerr << "HERE IT IS" << endl;
         pl_mark = CR;
         state.set_marking(pl_mark, 4, 4);
     }
@@ -57,14 +56,14 @@ int main()
             state.set_marking(pl_mark, 4, 4);
         }
     }
-    cout << "THERE 1" << endl;
     root->move = state._boards[pl_mark];
     expand_node(root, state);
     // cout << "THERE 2" << endl;
     // cerr << "ROOT" << endl;
     // cerr << *root << endl;
     // cerr << "END OF ROOT" << endl;
-    mcts(root, state, 900);
+    mcts(root, state, 9000);
+    cerr << "nb of nodes: " << current_address - memory << endl;
     exit(0);
     // rest of the game
     while (1) {

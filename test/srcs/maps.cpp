@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/03/20 20:13:15 by francisco         #+#    #+#             */
-/*   Updated: 2021/07/28 17:50:43 by francisco        ###   ########.fr       */
+/*   Updated: 2021/07/29 21:30:21 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,122 +103,44 @@ TEST_F(TUTT_maps, insert_and_access) {
 	}
 }
 
-TEST_F(TUTT_maps, which_square) {
-	EXPECT_EQ(State::which_square(0, 0), 0);
-	EXPECT_EQ(State::which_square(0, 1), 0);
-	EXPECT_EQ(State::which_square(0, 2), 0);
-	EXPECT_EQ(State::which_square(1, 0), 0);
-	EXPECT_EQ(State::which_square(1, 1), 0);
-	EXPECT_EQ(State::which_square(1, 2), 0);
-	EXPECT_EQ(State::which_square(2, 0), 0);
-	EXPECT_EQ(State::which_square(2, 1), 0);
-	EXPECT_EQ(State::which_square(2, 2), 0);
+TEST_F(TUTT_maps, which_sq) {
 
-	EXPECT_EQ(State::which_square(0, 3), 1);
-	EXPECT_EQ(State::which_square(1, 3), 1);
-	EXPECT_EQ(State::which_square(2, 3), 1);
-	EXPECT_EQ(State::which_square(0, 4), 1);
-	EXPECT_EQ(State::which_square(0, 4), 1);
-	EXPECT_EQ(State::which_square(1, 4), 1);
-	EXPECT_EQ(State::which_square(1, 5), 1);
-	EXPECT_EQ(State::which_square(2, 5), 1);
-	EXPECT_EQ(State::which_square(2, 5), 1);
-	
-	EXPECT_EQ(State::which_square(0, 6), 2);
-	EXPECT_EQ(State::which_square(1, 6), 2);
-	EXPECT_EQ(State::which_square(2, 6), 2);
-	EXPECT_EQ(State::which_square(0, 7), 2);
-	EXPECT_EQ(State::which_square(1, 7), 2);
-	EXPECT_EQ(State::which_square(2, 7), 2);
-	EXPECT_EQ(State::which_square(0, 8), 2);
-	EXPECT_EQ(State::which_square(1, 8), 2);
-	EXPECT_EQ(State::which_square(2, 8), 2);
+	for (auto i = 0 ; i < 81 ; i++) {
+		__uint128_t	move = (__uint128_t)1 << i;
+		__uint8_t	expected_value;
+		__uint8_t	x, y;
 
+		x = i / BOARD_SZ;
+		y = i % BOARD_SZ;
 
-	EXPECT_EQ(State::which_square(3, 0), 3);
-	EXPECT_EQ(State::which_square(3, 1), 3);
-	EXPECT_EQ(State::which_square(3, 2), 3);
-	EXPECT_EQ(State::which_square(4, 0), 3);
-	EXPECT_EQ(State::which_square(4, 1), 3);
-	EXPECT_EQ(State::which_square(4, 2), 3);
-	EXPECT_EQ(State::which_square(5, 0), 3);
-	EXPECT_EQ(State::which_square(5, 1), 3);
-	EXPECT_EQ(State::which_square(5, 2), 3);
-	
-	EXPECT_EQ(State::which_square(3, 3), 4);
-	EXPECT_EQ(State::which_square(3, 4), 4);
-	EXPECT_EQ(State::which_square(3, 5), 4);
-	EXPECT_EQ(State::which_square(4, 3), 4);
-	EXPECT_EQ(State::which_square(4, 4), 4);
-	EXPECT_EQ(State::which_square(4, 5), 4);
-	EXPECT_EQ(State::which_square(5, 3), 4);
-	EXPECT_EQ(State::which_square(5, 4), 4);
-	EXPECT_EQ(State::which_square(5, 5), 4);
-	
-	EXPECT_EQ(State::which_square(3, 6), 5);
-	EXPECT_EQ(State::which_square(3, 7), 5);
-	EXPECT_EQ(State::which_square(3, 8), 5);
-	EXPECT_EQ(State::which_square(4, 6), 5);
-	EXPECT_EQ(State::which_square(4, 7), 5);
-	EXPECT_EQ(State::which_square(4, 8), 5);
-	EXPECT_EQ(State::which_square(5, 6), 5);
-	EXPECT_EQ(State::which_square(5, 7), 5);
-	EXPECT_EQ(State::which_square(5, 8), 5);
-	
-	EXPECT_EQ(State::which_square(6, 0), 6);
-	EXPECT_EQ(State::which_square(6, 1), 6);
-	EXPECT_EQ(State::which_square(6, 2), 6);
-	EXPECT_EQ(State::which_square(7, 0), 6);
-	EXPECT_EQ(State::which_square(7, 1), 6);
-	EXPECT_EQ(State::which_square(7, 2), 6);
-	EXPECT_EQ(State::which_square(8, 0), 6);
-	EXPECT_EQ(State::which_square(8, 1), 6);
-	EXPECT_EQ(State::which_square(8, 2), 6);
-
-	EXPECT_EQ(State::which_square(6, 3), 7);
-	EXPECT_EQ(State::which_square(6, 4), 7);
-	EXPECT_EQ(State::which_square(6, 5), 7);
-	EXPECT_EQ(State::which_square(7, 3), 7);
-	EXPECT_EQ(State::which_square(7, 4), 7);
-	EXPECT_EQ(State::which_square(7, 5), 7);
-	EXPECT_EQ(State::which_square(8, 3), 7);
-	EXPECT_EQ(State::which_square(8, 4), 7);
-	EXPECT_EQ(State::which_square(8, 5), 7);
-	
-	EXPECT_EQ(State::which_square(6, 6), 8);
-	EXPECT_EQ(State::which_square(6, 7), 8);
-	EXPECT_EQ(State::which_square(6, 8), 8);
-	EXPECT_EQ(State::which_square(7, 6), 8);
-	EXPECT_EQ(State::which_square(7, 7), 8);
-	EXPECT_EQ(State::which_square(7, 8), 8);
-	EXPECT_EQ(State::which_square(8, 6), 8);
-	EXPECT_EQ(State::which_square(8, 7), 8);
-	EXPECT_EQ(State::which_square(8, 8), 8);
-}
-
-TEST_F(TUTT_maps, sq_is_win) {
-	state.set_marking(CL, 2, 0);	
-	state.set_marking(CL, 1, 1);	
-	state.set_marking(CL, 0, 2);
-	EXPECT_TRUE(state.sq_is_win(CL, 0, 0));
-	EXPECT_TRUE(state.sq_is_win(CL, 2,2));
-
-	state.set_marking(CL, 6, 6);
-	state.set_marking(CL, 6, 7);
-	state.set_marking(CL, 6, 8);
-	EXPECT_TRUE(state.sq_is_win(CL, 6, 6));
-	EXPECT_TRUE(state.sq_is_win(CL, 6, 8));
-	EXPECT_TRUE(state.sq_is_win(CL, 7, 7));
-
-	for (auto i = 0 ; i < BOARD_SZ ; i++)
-		for (auto j = 0 ; j < BOARD_SZ ; j++) {
-			if ((i / SQ_SZ * SQ_SZ == 0 && j / SQ_SZ * SQ_SZ == 0) ||
-				(i / SQ_SZ * SQ_SZ == 6 && j / SQ_SZ * SQ_SZ == 6))
-					EXPECT_TRUE(state.sq_is_win(CL, i, j));
-			else
-				EXPECT_FALSE(state.sq_is_win(CL, i, j));
+		if (x < 3) {
+			if (y < 3)
+				expected_value = 0;
+			else if (y < 6)
+				expected_value = 1;
+			else if (y < 9)
+				expected_value = 2;
 		}
+		else if (x < 6) {
+			if (y < 3)
+				expected_value = 3;
+			else if (y < 6)
+				expected_value = 4;
+			else if (y < 9)
+				expected_value = 5;
+		}
+		else if (x < 9) {
+			if (y < 3)
+				expected_value = 6;
+			else if (y < 6)
+				expected_value = 7;
+			else if (y < 9)
+				expected_value = 8;
+		}
+		ASSERT_EQ(expected_value, which_sq(move));
+	}
 }
+
 
 TEST_F(TUTT_maps, sq_is_finished) {
 	for (auto i = 0 ; i < 8 ; i++) {
@@ -231,28 +153,33 @@ TEST_F(TUTT_maps, sq_is_finished) {
 
 TEST_F(TUTT_maps, get_possible_moves) {
 	for (auto i = 0 ; i < 8 ; i++) {
-		EXPECT_EQ(state.get_possible_moves(i), board_masks[i]);
+		__uint128_t possible_moves = state.get_possible_moves(i);
+		__uint128_t expected = board_masks[i];
+		
+		ASSERT_EQ(possible_moves, expected);
+		
 		state._boards[CR] = board_masks[i];
-		EXPECT_EQ(state.get_possible_moves(i), ~(board_masks[i]) & fullmap_mask);
+
+		possible_moves = state.get_possible_moves(i);
+		expected = (~board_masks[i]) & fullmap_mask;
+		ASSERT_EQ(possible_moves, expected);
 	}
 	state._boards[CR] = board_masks[0] | board_masks[8];
 	EXPECT_EQ(state.get_possible_moves(0), ~(board_masks[0] | board_masks[8]) & fullmap_mask);
 }
 
-// __uint128_t	identify_square(__uint128_t move) {
-	
-// }
-
-
-TEST_F(TUTT_maps, identify_square) {
+TEST_F(TUTT_maps, id_sq) {
 	__uint128_t	move;
 	for (int i = 0 ; i < 9 ; i++) {
 		for (int j = 0 ; j < 9 ; j++) {
 			move = (__uint128_t)1 << (i * BOARD_SZ + j);
-			EXPECT_TRUE(identify_square(move) < 10);
+			ASSERT_TRUE(id_sq(move) < 10);
 		}
 	}
-}
+	
+	move = (__uint128_t)1 << 53;
+	ASSERT_EQ(id_sq(move), 8);
+ }
 
 TEST_F(TUTT_maps, which_bit) {
 	__uint128_t move;
@@ -260,4 +187,29 @@ TEST_F(TUTT_maps, which_bit) {
 		move = (__uint128_t) 1 << i;
 		EXPECT_EQ(which_bit(move), i);
 	}
+}
+TEST_F(TUTT_maps, sq_is_win) {
+	state.set_marking(CL, 2, 0);	
+	state.set_marking(CL, 1, 1);	
+	state.set_marking(CL, 0, 2);
+	ASSERT_TRUE(sq_is_win(state._boards[CL], 0));
+
+	state.set_marking(CL, 6, 6);
+	state.set_marking(CL, 6, 7);
+	state.set_marking(CL, 6, 8);
+	ASSERT_TRUE(sq_is_win(state._boards[CL], 8));
+
+	for (auto i = 0 ; i < BOARD_SZ ; i++) {
+		bool result = sq_is_win(state._boards[CL], i);
+		if (i == 0 || i == 8)
+			ASSERT_TRUE(result);
+		else
+			ASSERT_FALSE(result);
+	}
+}
+
+TEST_F(TUTT_maps, set_sq_as_lost) {
+	state._boards[CR] = board_masks[4] | board_masks[2];
+	set_sq_as_lost(state, CR, 4);
+	EXPECT_EQ((uint32_t)popcnt_u128(state._boards[CR]), 9);
 }

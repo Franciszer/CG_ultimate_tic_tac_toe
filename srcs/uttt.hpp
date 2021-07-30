@@ -69,16 +69,7 @@ struct State
 	bool	is_marking(bool player, int x, int y);
 
 	// get square for x, y coordinates
-	static __uint8_t	which_square(__uint16_t x, __uint16_t y);
 
-	static __uint8_t	which_square(__uint128_t move);
-
-	void	set_sq_as_won(bool player, __uint8_t sq);
-
-	// returns true if square is won by player
-	// call this function when you just inserted an element, to check if that move won the square
-	// otherwise, call sq_is_finished
-	bool	sq_is_win(bool player, __uint8_t x, __uint8_t y);
 
 	bool	sq_is_finished(__uint8_t sq);
 
@@ -94,13 +85,21 @@ struct State
 	// much like sq_is_win, but for the whole board
 	bool	is_win(bool player);
 
+	bool	is_draw();
+
 	// when all squares have been finished, determins who won, i.e who has won the most squares
 	bool	who_won();
     
     __uint128_t		_boards[2];	// 1 map for player's and opponent's markings
 };
 
+bool	sq_is_win(__uint128_t board, __uint8_t sq);
+bool	sq_is_draw(State& state, bool player, __uint8_t sq);
+
+void	set_sq_as_won(State& state, bool player, __uint8_t sq);
+void	set_sq_as_lost(State& state, bool player, __uint8_t sq);
 __uint8_t	which_bit(__uint128_t n);
+__uint8_t	which_sq(__uint128_t move);
 
 struct Node {
 	Node*		parent; 	// parent node
@@ -123,15 +122,17 @@ void	expand_node(Node* leaf, State& state);
 // pick child with most visits
 Node*	result(Node* node);
 
-__uint128_t	pick_random_move(const __uint128_t possible_moves);
+__uint128_t	pick_move(const __uint128_t possible_moves);
 
-float	rollout(State state, bool player, const __uint128_t& last_move);
+float	rollout(State state, bool player, __uint128_t last_move);
 
 __uint128_t		get_best_move(Node* root);
 
 ostream&    operator<<(ostream& os, Node const &node);
 
-__uint8_t	identify_square(__uint128_t move);
+__uint8_t	id_sq(__uint128_t move);
+
+void		pboard(State& state, __uint128_t move, bool player, ostream& os);
 
 const __uint128_t	board_masks[9] = {	uint128_decode(0x1c0e07, 0x0),
 										uint128_decode(0xe07038, 0x0),
