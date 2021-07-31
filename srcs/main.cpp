@@ -44,16 +44,16 @@ int main()
 
     if (opponentRow == -1) {
         pl_mark = CR;
-        state.set_marking(pl_mark, 4, 4);
+        state._boards[pl_mark] |= (__uint128_t)1 << (4 * BOARD_SZ + 4) ;
     }
     else {
         pl_mark = CL;
-        state.set_marking(CR, opponentRow, opponentCol);
+        state._boards[CR] |= (__uint128_t)1 << (opponentRow * BOARD_SZ + opponentCol);
         if (opponentRow == 4 && opponentCol == 4) {
-            state.set_marking(pl_mark, 5, 5);
+            state._boards[pl_mark] |= (__uint128_t)1 << (5 * BOARD_SZ + 5) ;
         }
         else {
-            state.set_marking(pl_mark, 4, 4);
+            state._boards[pl_mark] |= (__uint128_t)1 << (4 * BOARD_SZ + 4) ;
         }
     }
     root->move = state._boards[pl_mark];
@@ -62,7 +62,15 @@ int main()
     // cerr << "ROOT" << endl;
     // cerr << *root << endl;
     // cerr << "END OF ROOT" << endl;
-    mcts(root, state, 9000);
+    // cerr << "first" << endl;
+    // pboard(state, 0, !pl_mark, cerr);
+    mcts(root, state, 1000);
+    // for (int i = 0 ; i < root->nb ; i++) {
+    //     cerr << "CHILD " << i << endl;
+    //     cerr << "visits: " << root->children[i].visits << endl;
+    //     cerr << "wins: " << root->children[i].wins << endl;
+    //    print_board(root->children[i].children[0].move);
+    // }
     cerr << "nb of nodes: " << current_address - memory << endl;
     exit(0);
     // rest of the game

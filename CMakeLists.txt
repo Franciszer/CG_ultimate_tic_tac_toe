@@ -27,7 +27,7 @@ add_library(${This} SHARED ${Sources} ${Headers})
 
 # target_sources(${This} PUBLIC ${Sources})
 target_include_directories(${This} PUBLIC srcs)
-target_compile_options(${This} PUBLIC -Wall -Wextra -Ofast -finline)
+target_compile_options(${This} PUBLIC -Wall -Wextra)
 
 add_subdirectory(test)
 

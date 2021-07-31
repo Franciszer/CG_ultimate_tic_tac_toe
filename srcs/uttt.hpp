@@ -11,9 +11,9 @@
 #elif __linux__
 #include <nmmintrin.h>
 #endif
-#include <stdint.h>
 #include <cmath>
 #include <unordered_map>
+#include <stdint.h>
 #include <random>
 #include <chrono>
 #include <sys/time.h>
@@ -25,8 +25,6 @@ using std::chrono::duration_cast;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::chrono::system_clock;
-
-#define FLT_MIN 1.17549435E-38F
 
 #define CR 0
 #define CL 1
@@ -63,36 +61,14 @@ struct State
 
 	State&	operator=(const State& src);
 
-
-	void	set_marking(bool player, int x, int y);
-
-	bool	is_marking(bool player, int x, int y);
-
-	// get square for x, y coordinates
-
-
-	bool	sq_is_finished(__uint8_t sq);
-
-	// get the possible moves following current state
-	// sq is the number of the square to check
-	// does not work if the opponent hasn't played before
-	// each set bit corresponds to a possible position
-	__uint128_t			get_possible_moves(__uint8_t sq);
-
 	friend ostream&    operator<<(ostream& os, State const &state);
-
-
-	// much like sq_is_win, but for the whole board
-	bool	is_win(bool player);
-
-	bool	is_draw();
-
-	// when all squares have been finished, determins who won, i.e who has won the most squares
-	bool	who_won();
     
     __uint128_t		_boards[2];	// 1 map for player's and opponent's markings
 };
 
+bool	is_draw(const State& state);
+bool	is_win(const State& state, bool player);
+bool	sq_is_finished(const State& state, __uint8_t sq);
 bool	sq_is_win(__uint128_t board, __uint8_t sq);
 bool	sq_is_draw(State& state, bool player, __uint8_t sq);
 
@@ -100,6 +76,7 @@ void	set_sq_as_won(State& state, bool player, __uint8_t sq);
 void	set_sq_as_lost(State& state, bool player, __uint8_t sq);
 __uint8_t	which_bit(__uint128_t n);
 __uint8_t	which_sq(__uint128_t move);
+__uint128_t			get_possible_moves(const State& state, __uint8_t sq);
 
 struct Node {
 	Node*		parent; 	// parent node
@@ -110,7 +87,7 @@ struct Node {
 	float		wins;		// number of times this node or its descendants won a game
 };
 
-void	mcts(Node *root, State& state, int timelimit);
+void	mcts(Node *root, State& state, long timelimit);
 
 void	backpropagate(Node* root, Node* node, float simulation_result);
 
@@ -119,8 +96,6 @@ Node*	traverse(Node* node, State& state, bool &player);
 Node*	rollout_policy(Node* node);
 
 void	expand_node(Node* leaf, State& state);
-// pick child with most visits
-Node*	result(Node* node);
 
 __uint128_t	pick_move(const __uint128_t possible_moves);
 

@@ -2,9 +2,6 @@
 
 #include <stdio.h>
 
-#define FLT_MIN 1.17549435E-38F
-
-
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
@@ -16,6 +13,7 @@ Node*	memory  = new Node[5000000];
 Node*	current_address = memory;
 bool	pl_mark;
 
+unordered_map<State, Node*>	map;
 
 std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src)
 {
@@ -63,27 +61,18 @@ State&	State::operator=(const State& src) {
 	return *this;
 }
 
-
-void	State::set_marking(bool player, int x, int y) { // sets current player's marking on (x, y) position
-	_boards[player] = (_boards[player] | ((__uint128_t)1 << (x * BOARD_SZ + y)));
-}
-
-bool	State::is_marking(bool player, int x, int y) { // return true if player's (x, y) position is marked and false otherwise
-	return (_boards[player] & ((__uint128_t)1 << (x * BOARD_SZ + y)));
-}
-
-__uint8_t	which_sq(__uint128_t move) {
+inline __uint8_t	which_sq(__uint128_t move) {
 	for (auto i = 0 ; i < 9 ; i++)
 		if (move & board_masks[i])
 			return i;
 	return 10; // error value
 }
 
-void	set_sq_as_won(State& state, bool player, __uint8_t sq) {
+inline void	set_sq_as_won(State& state, bool player, __uint8_t sq) {
 	state._boards[player] |= board_masks[sq];
 }
 
-void	set_sq_as_lost(State& state, bool player, __uint8_t sq) {
+inline void	set_sq_as_lost(State& state, bool player, __uint8_t sq) {
 	state._boards[player] &= ~board_masks[sq];
 }
 
@@ -109,7 +98,7 @@ void	set_sq_as_lost(State& state, bool player, __uint8_t sq) {
 // 	return false;
 // }
 
-bool	sq_is_win(__uint128_t board, uint8_t sq) {
+inline bool	sq_is_win(__uint128_t board, uint8_t sq) {
 	
 	// index of the top left hand corner of the square
 	__uint8_t	idx = 3 * ( 3 * sq - sq % 3 * 2 );
@@ -131,53 +120,44 @@ bool	sq_is_win(__uint128_t board, uint8_t sq) {
 }
 
 
-bool	sq_is_draw(State& state, bool player, __uint8_t sq) {
+inline bool	sq_is_draw(State& state, bool player, __uint8_t sq) {
 	return ((state._boards[player] | state._boards[!player]) & board_masks[sq]) == board_masks[sq];
 }
 
-bool	State::sq_is_finished(__uint8_t sq) {
+inline bool	sq_is_finished(const State& state, __uint8_t sq) {
 	// cerr << __popcount<__uint8_t>(board_masks[sq] & _boards[CR]) << endl;
-	return ((_boards[CR] | _boards[CL]) & board_masks[sq]) == board_masks[sq] ;
+	return ((state._boards[CR] | state._boards[CL]) & board_masks[sq]) == board_masks[sq] ;
 }
 
 // get the possible moves following current state
 // sq is the number of the square to check
 // does not work if the opponent hasn't played before
 // each set bit corresponds to a possible position
-__uint128_t			State::get_possible_moves(__uint8_t sq) {
+inline __uint128_t			get_possible_moves(const State& state, __uint8_t sq) {
 	__uint128_t	possible_moves = 0;
 
-	if (sq_is_finished(sq)) {
-		possible_moves = ~(_boards[CR] | _boards[CL]) & fullmap_mask;
+	if (sq_is_finished(state, sq)) {
+		possible_moves = ~(state._boards[CR] | state._boards[CL]) & fullmap_mask;
 	}
 	else
-		possible_moves = ((~(_boards[CR] | _boards[CL])) & board_masks[sq]);
+		possible_moves = ((~(state._boards[CR] | state._boards[CL])) & board_masks[sq]);
 
 	return possible_moves;
 }
 
 
 // much like sq_is_win, but for the whole board
-bool	State::is_win(bool player) {
-	if (popcnt_u128(_boards[CR] | _boards[CL]) == 0x51) {
-		// cout << "ALL POSITIONS MARKED" << endl;
-		return true;
-	}
+inline bool	is_win(const State& state, bool player) {
 	for (auto i = 0 ; i < 8 ; i++)
-		if ( popcnt_u128(_boards[player] & board_win_masks[i]) == 27 &&
-		popcnt_u128(_boards[!player] & board_win_masks[i]) == 0) {
+		if ( popcnt_u128(state._boards[player] & board_win_masks[i]) == 27 &&
+		popcnt_u128(state._boards[!player] & board_win_masks[i]) == 0) {
 			return true;
 		}
 	return false;
 }
 
-bool	State::is_draw() {
-	return ( popcnt_u128(_boards[CR] | _boards[CL]) == (__uint128_t) 81 );
-}
-
-// when all squares have been finished, determins who won, i.e who has won the most squares
-bool	State::who_won() {
-	return popcnt_u128(_boards[CR]) < popcnt_u128(_boards[CL]);
+inline bool	is_draw(const State& state) {
+	return ( popcnt_u128(state._boards[CR] | state._boards[CL]) == (__uint128_t) 81 );
 }
 
 __uint8_t	which_bit(__uint128_t n) {
@@ -249,22 +229,33 @@ void			print_board(__uint128_t b) {
 	cerr << endl;
 }
 
-void	mcts(Node *root, State& state, int timelimit) {
-	struct timeval stop, start;
-	gettimeofday(&start, NULL);
+void	mcts(Node *root, State& state, long timelimit) {
+	struct timeval time_now{};
+    gettimeofday(&time_now, nullptr);
+    time_t msecs_time = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
+	time_t t2;
+
+	State	s2;
 	int count = 0;
 	do {
+		cerr << count << "  " << (current_address - memory) << endl;
 		++count;
-		bool	player = !pl_mark;
-		Node*	leaf = traverse(root, state, player);
-		expand_node(leaf, state);
-		float	simulation_result = rollout(state, player, leaf->move);
+		s2 = state;
+		bool	player = pl_mark;
+		Node*	leaf = traverse(root, s2, player);
+		// cerr << "count: " << count << endl << "bit: " << (uint)which_bit(leaf->move) << endl << s2 << endl;
+		// if (count == 10) break;
+		cerr << "traverse passed" << endl;
+		expand_node(leaf, s2);
+		cerr << "expand_node passed" << endl;
+		float	simulation_result = rollout(s2, player, leaf->move);
 		backpropagate(root, leaf, simulation_result);
-		gettimeofday(&stop, NULL);
+		cerr << "backpropagate passed" << endl;
+		gettimeofday(&time_now, NULL);	
+		t2 = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
 	}
-	while ((stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec < timelimit);
-	cerr << count << endl;
-
+	while (t2 - msecs_time < timelimit);
+	cerr << "count " << count << endl;
 }
 
 __uint128_t		get_best_move(Node* root) {
@@ -287,10 +278,16 @@ void	backpropagate(Node* root, Node* node, float simulation_result) {
 Node*	traverse(Node* node, State& state, bool &player) {
 	while (node->visits) {
 		node = rollout_policy(node);
+		// if (is_win(state, !player)) {
+		// 	pboard(state, 0, 0, cerr);
+		// 	cerr << "ERROR" << endl;
+		// 	exit(0);
+		// }
+		// pboard(state, 0, CR, cerr);
+		// print_board (node->move);
 		state._boards[player] |= node->move;
 		player = !player;
 	}
-
 	return node;
 }
 
@@ -299,12 +296,13 @@ Node*	rollout_policy(Node* node) {
 	float	best_score = -1000000;
 	Node*	best_child = NULL;
 	float	score = 0;
-	// cerr << "2" << endl;
-	// cerr << "PARENT" << endl << *node << endl;
+
 	for (auto i = 0 ; i < node->nb ; i++) {
 		// cerr << "3" << endl;
 		// cerr << "CHILD" << endl << node->children[i] << endl;
-		score = node->children[i].wins / (node->children[i].visits + 1) + sqrt(2) * sqrt(log(node->visits + 1) / (node->children[i].visits + 1));
+		if (!node->children[i].visits)
+			return &node->children[i];
+		score = node->children[i].wins / (node->children[i].visits) + sqrt(2) * sqrt(log(node->visits + 1) / (node->children[i].visits ));
 		// cerr << "3.5" << endl;
 		// cerr << "idx: " << i << endl << "score: " << score << " best: " << best_score << endl;
 		if (best_score < score) {
@@ -318,30 +316,37 @@ Node*	rollout_policy(Node* node) {
 
 void	expand_node(Node* leaf, State& state) {
 	__uint128_t	possible_moves =\
-		state.get_possible_moves(which_sq(leaf->move));
+		get_possible_moves(state, which_sq(leaf->move));
 	leaf->nb = 0;
 	leaf->children = current_address;
+	// cerr << "possible_moves" << endl;
+	// print_board(possible_moves);
 	for (__uint128_t i = 0 ; i < 81 ; i++) {
 		__uint128_t	current_move = (__uint128_t)1 << i;
 		if (possible_moves & current_move) {
+
+			// cerr << "i: " << (uint64_t)i << endl;
+			// cerr << "current_address: " << current_address << endl;
+			// print_board(current_move);
 			current_address->parent = leaf;
 			current_address->move = current_move;
 			current_address->visits = 0;
 			current_address->wins = 0;
-			leaf->children[leaf->nb] = *current_address;
 			++leaf->nb;
 			++current_address;
 		}
 	}
+	// cerr << "CHILDREN" << endl;
+	// __uint128_t	child_moves = 0;
+	// for (uint i = 0 ; i < leaf->nb ; i++)
+	// 	child_moves |= leaf->children[i].move;
+	// print_board(child_moves);
+	// cerr << "end in expand_node" << endl;
+	// exit(0);
 }
 
-// pick child with most visits
-Node*	result(Node* node) {
-	return node;
-}
-
-	std::mt19937 rng(std::random_device{}());
-__uint128_t	pick_move(const __uint128_t possible_moves) {
+std::mt19937 rng(std::random_device{}());
+inline __uint128_t	pick_move(const __uint128_t possible_moves) {
 	
 	uint32_t	limit = popcnt_u128(possible_moves) - 1;
  
@@ -364,20 +369,20 @@ __uint128_t	pick_move(const __uint128_t possible_moves) {
 }
 
 float	rollout(State state, bool player, __uint128_t move) {
+	__uint8_t	sq;
+	__uint128_t	possible_moves;
+	bool		result;
 
 	// int	count = 0;
 	while (true) {
 		// cout << count++ << endl;
-		// if (~fullmap_mask & (state._boards[CR] | state._boards[CL]))
-		// {
-		// 	cout << "ERROR" << endl;
-		// 	exit(0);
-		// }
-		// sq where we should play according to last move
-		__uint8_t	sq = id_sq(move);
-
+		sq = id_sq(move);
+		if (sq == 10) {
+			cerr << "WTF SQ" << endl;
+			exit(0);
+		}
 		// get all of the possible moves
-		__uint128_t	possible_moves = state.get_possible_moves(sq);
+		possible_moves = get_possible_moves(state, sq);
 
 		// pick a random one
 		move = pick_move(possible_moves);
@@ -390,20 +395,7 @@ float	rollout(State state, bool player, __uint128_t move) {
 
 		// get the square on which the new move was played
 		sq = which_sq(move);
-		if (sq >= 10) {
-			// cerr << "ERROR sq: " << (unsigned int)sq << endl;
-			// cerr << "move" << endl;
-			// cerr << (uint64_t)popcnt_u128(move) << endl;
-			// print_board(move);
-			// cerr << "CR" << endl;
-			// cerr << (uint64_t)popcnt_u128(state._boards[CR]) << endl;
-			// print_board(state._boards[CR]);
-			// cerr << "CL" << endl;
-			// cerr << (uint64_t)popcnt_u128(state._boards[CL]) << endl;
-			// print_board(state._boards[CL]);
-			exit(0);
-		}
-		bool result = sq_is_win(state._boards[player], sq);
+		result = sq_is_win(state._boards[player], sq);
 		if (result) {
 			// cout << "sq won |||" << (uint64_t)sq << endl;
 			set_sq_as_won(state, player, sq);
@@ -417,7 +409,7 @@ float	rollout(State state, bool player, __uint128_t move) {
 
 		if (result) {
 			// check for terminal state 
-			if (state.is_win(player)) {
+			if (is_win(state, player)) {
 				// cout << "IS WIN " << (player == CR ? "X" : "O") << endl;
 				// cout << "X " << (uint32_t)popcnt_u128(state._boards[CR]) << endl;
 				// print_board(state._boards[CR]);
@@ -425,7 +417,7 @@ float	rollout(State state, bool player, __uint128_t move) {
 				// print_board(state._boards[CL]);
 				return player == pl_mark ? 1 : 0;
 			}
-			if (state.is_draw()) {
+			if (is_draw(state)) {
 				// cout << "IS DRAW" << endl;
 				return 0.5;
 			}
@@ -436,7 +428,7 @@ float	rollout(State state, bool player, __uint128_t move) {
 	return 0;
 }
 
-__uint8_t	id_sq(__uint128_t move) {
+inline __uint8_t	id_sq(__uint128_t move) {
 	for (auto i = 0 ; i < 9 ; i++)
 		if (move & direction_masks[i])
 			return i;
