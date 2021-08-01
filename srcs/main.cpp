@@ -23,6 +23,7 @@ int main()
 	State	state;
     Node*   root;
 
+    g_map.reserve(5'000'000);
     root = memory;
     root->parent = NULL;
     root->visits = 1;

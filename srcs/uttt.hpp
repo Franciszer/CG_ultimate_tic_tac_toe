@@ -18,7 +18,6 @@
 #include <chrono>
 #include <sys/time.h>
 #include <ctime>
-#include <sys/time.h>
 
 using std::cout; using std::endl;
 using std::chrono::duration_cast;
@@ -81,8 +80,7 @@ __uint128_t			get_possible_moves(const State& state, __uint8_t sq);
 struct Node {
 	Node*		parent; 	// parent node
 	__uint128_t	move;		// move that has to be applied to the parent node to get this child
-	Node*		children; 	// first child address in memory
-	__uint8_t	nb;			// number of children
+	Node**		children; 	// first child address in memory
 	float		visits;		// number of times the node was visited
 	float		wins;		// number of times this node or its descendants won a game
 };
@@ -161,5 +159,18 @@ extern Node*	memory;
 
 extern Node*	current_address;
 extern bool		pl_mark;
+
+struct StateHasher {
+    std::size_t operator()(const State& s) const {
+        std::size_t h = 0;
+
+        h ^= std::hash<int>{}(s._boards[CR])  + 0x9e3779b9 + (h << 6) + (h >> 2); 
+        h ^= std::hash<int>{}(s._boards[CL])  + 0x9e3779b9 + (h << 6) + (h >> 2); 
+
+        return h;
+    }   
+};
+
+unordered_map<State, Node*, StateHasher>	g_map;
 
 #endif

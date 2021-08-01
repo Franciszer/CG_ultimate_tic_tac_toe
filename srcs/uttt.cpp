@@ -13,7 +13,7 @@ Node*	memory  = new Node[5000000];
 Node*	current_address = memory;
 bool	pl_mark;
 
-unordered_map<State, Node*>	map;
+extern unordered_map<State, Node*, StateHasher> g_map;
 
 std::pair<__uint64_t,__uint64_t> uint128_encode(__uint128_t src)
 {
@@ -75,28 +75,6 @@ inline void	set_sq_as_won(State& state, bool player, __uint8_t sq) {
 inline void	set_sq_as_lost(State& state, bool player, __uint8_t sq) {
 	state._boards[player] &= ~board_masks[sq];
 }
-
-// returns true if square is won by player
-// call this function when you just inserted an element, to check if that move won the square
-// otherwise, call sq_is_finished
-// bool	State::sq_is_win(bool player, __uint8_t x, __uint8_t y) {
-// 	// set coordinates to the top left hand corner of the square
-// 	x -= x % SQ_SZ;
-// 	y -= y % SQ_SZ;
-
-// 	// move the square to the beginning of board and remove all of the other set bits
-// 	__uint128_t	curr_sq = (_boards[player] >> (x * BOARD_SZ + y)) & board_masks[0];
-
-// 	// check if sq is in a finished configuration
-// 	for (auto i = 0 ; i < 8 ; i++) {
-// 		// cerr << "popcnt: " << popcnt_u128(curr_sq & square_masks[i]) << endl;
-// 		if (popcnt_u128((curr_sq & square_masks[i])) == 3)
-// 			return true;
-// 	}
-
-// 	// if that is not the case, the square is not finished
-// 	return false;
-// }
 
 inline bool	sq_is_win(__uint128_t board, uint8_t sq) {
 	
@@ -278,13 +256,7 @@ void	backpropagate(Node* root, Node* node, float simulation_result) {
 Node*	traverse(Node* node, State& state, bool &player) {
 	while (node->visits) {
 		node = rollout_policy(node);
-		// if (is_win(state, !player)) {
-		// 	pboard(state, 0, 0, cerr);
-		// 	cerr << "ERROR" << endl;
-		// 	exit(0);
-		// }
-		// pboard(state, 0, CR, cerr);
-		// print_board (node->move);
+
 		state._boards[player] |= node->move;
 		player = !player;
 	}
